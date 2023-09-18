@@ -1,0 +1,33 @@
+########## Free-end NEB of screw glide under shear loading
+########## ysi30@gatech.edu
+########## 01/10/2022 
+##################################################
+##########~~~~~~~~~~~~~~ Initialization
+units	          metal
+timestep          0.001
+dimension         3
+boundary          p p p
+atom_style        atomic
+atom_modify       map array sort 0 0 
+variable          u uloop 24   # number of replicas
+read_data         data.InitialReplica
+
+pair_style        eam/alloy
+pair_coeff        * * NiAlH_jea.eam.alloy Ni
+
+##########~~~~~~~~~~~~~~ Energy minimization 
+thermo            1000
+thermo_style      custom step pe pxx pyy pzz pxy pxz pyz
+
+include           topBottomBoundaryLayer # read boundary file
+fix               1 fixtop setforce 0 0 0 
+fix               2 fixbottom setforce 0 0 0 
+fix               3 coreneb neb 1.0
+
+variable          this_u equal $u-1
+dump              1 all cfg 10000 *_${this_u}.cfg mass type xs ys zs
+dump_modify       1 element Ni sort id
+
+min_style         quickmin
+neb               1.0e-12 0 20000 1000 200 final 0.last
+
